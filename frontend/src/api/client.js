@@ -19,3 +19,4 @@ export const saveWorkflowGraph = (id, nodes, edges) => {
 };
 
 export default client;
+export const runWorkflow = (id) => client.post(`workflows/${id}/run/`);

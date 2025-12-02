@@ -11,7 +11,8 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { getWorkflows, saveWorkflowGraph } from './api/client';
 import Sidebar from './Sidebar';
-import NodeInspector from './NodeInspector'; // <--- NUEVO: Importar Inspector
+import NodeInspector from './NodeInspector'; 
+import { runWorkflow } from './api/client';
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
@@ -75,6 +76,17 @@ function AppContent() {
   const onNodeClick = useCallback((event, node) => {
     setSelectedNode(node);
   }, []);
+
+  const onRun = async () => {
+    if (workflowId) {
+      try {
+        await runWorkflow(workflowId);
+        alert('Ejecucion disparada, mirate la terminal de python!');
+        } catch (error) {
+        console.error(error);
+      } 
+    }
+  };
 
   // <--- NUEVO: Si hacen clic en el fondo vacío, deseleccionamos
   const onPaneClick = useCallback(() => {
@@ -159,11 +171,36 @@ function AppContent() {
                 
                 <Panel position="top-right">
                   <button 
+                    onClick={onRun}
+                    style={{ 
+                      marginRight: '40px', 
+                      padding: '10px 20px', 
+                      background: '#2196F3', // Azul para diferenciarlo
+                      color: 'white', 
+                      border: 'none', 
+                      borderRadius: '5px', 
+                      cursor: 'pointer', 
+                      fontWeight: 'bold' 
+                    }}
+                  >
+                    ▶ Ejecutar
+                  </button>
+
+                  <button 
+                    onClick={onSave}
+                  >
+                    💾 Guardar
+                  </button>
+                </Panel>
+                <Panel position="top-right">
+                  
+                  <button 
                     onClick={onSave}
                     style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     💾 Guardar
                   </button>
+                
                 </Panel>
             </ReactFlow>
         </div>
@@ -173,6 +210,8 @@ function AppContent() {
     </div>
   );
 }
+
+
 
 export default function App() {
   return (

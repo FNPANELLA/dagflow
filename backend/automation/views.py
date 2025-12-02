@@ -6,6 +6,11 @@ from django.db import transaction
 from .models import Workflow, Node, Edge
 from .serializers import WorkflowSerializer, NodeSerializer, EdgeSerializer
 
+
+
+
+
+
 class WorkflowViewSet(viewsets.ModelViewSet):
     queryset = Workflow.objects.all()
     serializer_class = WorkflowSerializer
@@ -69,6 +74,22 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['post'])
+    def run(self, request, pk=None):
+        """
+        Ejecuta el workflow inmediatamente (sincrónico para pruebas).
+        """
+        from .executor import GraphExecutor  # Importación local
+        
+        workflow = self.get_object()
+        executor = GraphExecutor(workflow)
+        
+        # Ejecutamos y miramos la consola del backend para ver los logs
+        executor.run()
+        
+        return Response({'status': 'Ejecución iniciada (mira la consola del servidor)'}, status=status.HTTP_200_OK)    
+
 
 class NodeViewSet(viewsets.ModelViewSet):
     queryset = Node.objects.all()
