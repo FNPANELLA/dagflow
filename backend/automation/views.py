@@ -12,10 +12,7 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def save_graph(self, request, pk=None):
-        """
-        Recibe el grafo completo (nodos y edges) y actualiza el workflow.
-        Estrategia: Borrón y cuenta nueva (Delete & Re-create) para simplificar.
-        """
+
         workflow = self.get_object()
         data = request.data
         
@@ -36,7 +33,17 @@ class WorkflowViewSet(viewsets.ModelViewSet):
                 for n in nodes_data:
                     # El ID que viene del frontend (puede ser 'dndnode_0' o un UUID viejo)
                     frontend_id = n.get('id')
+                    node_data = n.get('data', {})
+                    real_type = node_data.get('nodeType', node_data.get('label', 'DEFAULT'))
                     
+                    new_node = Node.objects.create(
+                        workflow=workflow,
+                        type=real_type, # Usamos el tipo real (HTTP_REQUEST, etc)
+                        ui_position=n.get('position', {'x': 0, 'y': 0}),
+                        
+                        # AQUÍ ESTÁ LA CLAVE: Guardamos todo el objeto 'config' que viene del frontend
+                        config=node_data.get('config', {}) 
+                        )
                     # Creamos el nodo en la DB
                     new_node = Node.objects.create(
                         workflow=workflow,

@@ -6,11 +6,12 @@ import ReactFlow, {
   useNodesState, 
   useEdgesState,
   ReactFlowProvider,
-  Panel // <--- Importamos 'Panel' para poner botones sobre el lienzo
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { getWorkflows, saveWorkflowGraph } from './api/client'; // Importamos saveWorkflowGraph
+import { getWorkflows, saveWorkflowGraph } from './api/client';
 import Sidebar from './Sidebar';
+import NodeInspector from './NodeInspector'; // <--- NUEVO: Importar Inspector
 
 let id = 0;
 const getId = () => `dndnode_${id++}`;
@@ -20,22 +21,29 @@ function AppContent() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  const [workflowId, setWorkflowId] = useState(null); // <--- Estado para el ID
+  const [workflowId, setWorkflowId] = useState(null);
+  
+  // <--- NUEVO: Estado para saber qué nodo está seleccionado
+  const [selectedNode, setSelectedNode] = useState(null);
 
   useEffect(() => {
     async function loadData() {
       try {
         const response = await getWorkflows();
-        const myWorkflow = response.data[0]; // Tomamos el primero
+        const myWorkflow = response.data[0];
         if (!myWorkflow) return;
-
-        setWorkflowId(myWorkflow.id); // Guardamos el ID
+        setWorkflowId(myWorkflow.id);
 
         const backendNodes = myWorkflow.nodes.map((n) => ({
           id: String(n.id), 
           type: 'default', 
           position: n.ui_position || { x: 0, y: 0 }, 
-          data: { label: n.type }, // Usamos n.type para simplificar visualización
+          // <--- IMPORTANTE: Recuperamos la config y el tipo desde el backend
+          data: { 
+            label: n.type, // Visual
+            nodeType: n.type, // Lógico (para el inspector)
+            config: n.config || {} // Datos guardados (url, email, etc)
+          }, 
         }));
 
         const backendEdges = myWorkflow.edges.map((e) => ({
@@ -56,7 +64,16 @@ function AppContent() {
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
-  // --- Lógica del Drag & Drop (Igual que antes) ---
+  // <--- NUEVO: Cuando hacen clic en un nodo
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+  }, []);
+
+  // <--- NUEVO: Si hacen clic en el fondo vacío, deseleccionamos
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -65,7 +82,7 @@ function AppContent() {
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData('application/reactflow');
+      const type = event.dataTransfer.getData('application/reactflow'); // Ej: 'HTTP_REQUEST'
       const label = event.dataTransfer.getData('application/label');
 
       if (typeof type === 'undefined' || !type) return;
@@ -79,23 +96,29 @@ function AppContent() {
         id: getId(),
         type: 'default',
         position,
-        data: { label: label }, // Guardamos el label correcto
+        // <--- NUEVO: Guardamos el nodeType explícitamente en 'data'
+        data: { 
+            label: label,
+            nodeType: type, // Esto es clave para el inspector
+            config: {}      // Config vacía inicial
+        },
       };
 
       setNodes((nds) => nds.concat(newNode));
+      // Opcional: Seleccionar automáticamente el nodo nuevo
+      setSelectedNode(newNode);
     },
     [reactFlowInstance, setNodes],
   );
 
-  // --- Nueva Función de Guardado ---
   const onSave = async () => {
     if (reactFlowInstance && workflowId) {
-      const flow = reactFlowInstance.toObject(); // Obtiene el estado actual del lienzo
+      const flow = reactFlowInstance.toObject(); 
+      // Los nodos ahora llevan 'data.config' dentro, así que se enviarán al backend
       console.log("Guardando flujo...", flow);
-      
       try {
         await saveWorkflowGraph(workflowId, flow.nodes, flow.edges);
-        alert('¡Flujo guardado con éxito en Django!');
+        alert('¡Flujo guardado con éxito!');
       } catch (error) {
         console.error(error);
         alert('Error al guardar.');
@@ -117,32 +140,29 @@ function AppContent() {
                 onInit={setReactFlowInstance}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
+                
+                // <--- NUEVOS EVENTOS
+                onNodeClick={onNodeClick} 
+                onPaneClick={onPaneClick}
+                
                 fitView
             >
                 <Controls />
                 <Background variant="dots" gap={12} size={1} />
                 
-                {/* Botón flotante de guardar */}
                 <Panel position="top-right">
                   <button 
                     onClick={onSave}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#4CAF50',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '5px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                    }}
+                    style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
-                    💾 Guardar Cambios
+                    💾 Guardar
                   </button>
                 </Panel>
-
             </ReactFlow>
         </div>
+
+        {/* <--- NUEVO: El Inspector a la derecha */}
+        <NodeInspector selectedNode={selectedNode} setNodes={setNodes} />
     </div>
   );
 }
