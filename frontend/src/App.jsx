@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useCallback, useState } from 'react';
+import ReactFlow, { 
+  Background, 
+  Controls, 
+  addEdge, 
+  useNodesState, 
+  useEdgesState 
+} from 'reactflow';
+
+// Importante: Los estilos de React Flow son obligatorios
+import 'reactflow/dist/style.css';
+
+// Nodos iniciales de prueba (luego vendrán de Django)
+const initialNodes = [
+  { id: '1', position: { x: 200, y: 100 }, data: { label: 'Inicio (Webhook)' }, type: 'input' },
+  { id: '2', position: { x: 200, y: 300 }, data: { label: 'Proceso Python' } },
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: '1', target: '2', animated: true }
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Función para conectar nodos manualmente
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+      >
+        <Controls />
+        <Background variant="dots" gap={12} size={1} />
+      </ReactFlow>
+    </div>
+  );
 }
 
-export default App
+export default App;
