@@ -23,7 +23,7 @@ function AppContent() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [workflowId, setWorkflowId] = useState(null);
   
-  // <--- NUEVO: Estado para saber qué nodo está seleccionado
+
   const [selectedNode, setSelectedNode] = useState(null);
 
   useEffect(() => {
@@ -34,17 +34,24 @@ function AppContent() {
         if (!myWorkflow) return;
         setWorkflowId(myWorkflow.id);
 
+        const labelMap = {
+                'WEBHOOK': ' Webhook Trigger',
+                'HTTP_REQUEST': ' Petición HTTP',
+                'EMAIL': ' Enviar Email',
+                'CONDITION': 'bs Condición'
+              };
+
         const backendNodes = myWorkflow.nodes.map((n) => ({
-          id: String(n.id), 
-          type: 'default', 
-          position: n.ui_position || { x: 0, y: 0 }, 
-          // <--- IMPORTANTE: Recuperamos la config y el tipo desde el backend
-          data: { 
-            label: n.type, // Visual
-            nodeType: n.type, // Lógico (para el inspector)
-            config: n.config || {} // Datos guardados (url, email, etc)
-          }, 
-        }));
+                id: String(n.id), 
+                type: 'default', 
+                position: n.ui_position || { x: 0, y: 0 }, 
+                data: { 
+                  
+                  label: labelMap[n.type] || n.type, 
+                  nodeType: n.type, 
+                  config: n.config || {} 
+                }, 
+              }));
 
         const backendEdges = myWorkflow.edges.map((e) => ({
           id: String(e.id),

@@ -27,31 +27,24 @@ class WorkflowViewSet(viewsets.ModelViewSet):
 
                 # 2. Crear Nodos
                 # Mapeamos IDs temporales del frontend a los nuevos IDs reales de la DB
-                # Esto es crucial si quisieras mantener historial, pero para el MVP re-creamos.
                 node_mapping = {} 
 
                 for n in nodes_data:
-                    # El ID que viene del frontend (puede ser 'dndnode_0' o un UUID viejo)
                     frontend_id = n.get('id')
+                    
+
                     node_data = n.get('data', {})
                     real_type = node_data.get('nodeType', node_data.get('label', 'DEFAULT'))
                     
+
                     new_node = Node.objects.create(
                         workflow=workflow,
-                        type=real_type, # Usamos el tipo real (HTTP_REQUEST, etc)
+                        type=real_type, 
                         ui_position=n.get('position', {'x': 0, 'y': 0}),
-                        
-                        # AQUÍ ESTÁ LA CLAVE: Guardamos todo el objeto 'config' que viene del frontend
-                        config=node_data.get('config', {}) 
-                        )
-                    # Creamos el nodo en la DB
-                    new_node = Node.objects.create(
-                        workflow=workflow,
-                        type=n.get('data', {}).get('label', 'DEFAULT'), # Simplificación
-                        ui_position=n.get('position', {'x': 0, 'y': 0}),
-                        config=n.get('data', {})
+                        config=node_data.get('config', {}) # Guarda solo la config limpia
                     )
-                    # Guardamos la referencia: ID Frontend -> Objeto DB Real
+                    
+                    # Guardamos la referencia
                     node_mapping[frontend_id] = new_node
 
                 # 3. Crear Edges (Conexiones)
