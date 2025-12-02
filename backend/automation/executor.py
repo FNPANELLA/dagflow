@@ -6,12 +6,12 @@ class GraphExecutor:
     def __init__(self, workflow):
         self.workflow = workflow
         self.edges=list(workflow.edges.all())
-    def get_next_node(self, current_node):
+    def get_next_nodes(self, current_node):
         targets = []
         for edge in self.edges:
             if edge.source_id == current_node.id:
                 targets.append(edge.target)
-            return targets
+        return targets
         
     def execute_node(self, node, context):
         print(f"Ejecutando el nodo:  {node.type} ({node.id})")
