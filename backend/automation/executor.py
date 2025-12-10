@@ -1,5 +1,7 @@
 import requests
 import time
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Node, Edge
 
 class GraphExecutor:
@@ -32,16 +34,29 @@ class GraphExecutor:
                     print("Direccion URL no configurada...")
 
 
-                    ##!! tsting
+                    ##!! tsting mail
             elif node.type == 'EMAIL':
                 recipient = node.config.get('email')
-                subject = node.config.get('subject')
-                print(f"Enviando mail a: {recipient}")
-                print(f"Asunto: {subject}")
-                print(f"Cuerpo: Hola, el proceso termino con exito!")
+                subject = node.config.get('subject', 'Notifiacion DAGFLOW')
 
-
-
+                last_response = context.get('http_response', 'sin datos previos')
+                body = f"""
+                Hola, este es un aviso automatico de tu flujo '{self.workflow.name}'
+                El paso anterior http respondio esto... {last_response}
+                Saludos, el botazo que armaste sapeee! 
+                """
+                if recipient:
+                    print(f"Enviando correo a: {recipient}...")
+                    send_mail(
+                        subject, 
+                        body, 
+                        settings.DEFAULT_FROM_EMAIL, 
+                        [recipient], 
+                        fail_silently=False,
+                    )
+                    print("Enviado okay!")
+                else: 
+                    print("Nao nao, sin destinatario, no hay correo...")
         except Exception as e:
             print(f"Error ejecutando nodo: {str(e)}")
         return context
@@ -56,7 +71,7 @@ class GraphExecutor:
             return "Error: No se encontró un nodo de inicio (Webhook)."
 
         # 2. Cola de ejecución (Nodo, Contexto de datos)
-        # El contexto son los datos que viajan por los cables
+ 
         queue = [(start_node, {'payload': {}})] 
 
         while queue:
@@ -68,7 +83,7 @@ class GraphExecutor:
             # Buscar siguientes pasos y agregarlos a la cola
             next_nodes = self.get_next_nodes(current_node)
             for next_node in next_nodes:
-                # Pasamos el contexto actualizado al siguiente nodo
+                #   contexto actualizado al siguiente nodo
                 queue.append((next_node, new_context.copy()))
                 
         print("--- Ejecución Finalizada ---\n")
