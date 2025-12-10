@@ -37,7 +37,7 @@ class GraphExecutor:
                     ##!! tsting mail
             elif node.type == 'EMAIL':
                 recipient = node.config.get('email')
-                subject = node.config.get('subject', 'Notifiacion DAGFLOW')
+                subject = node.config.get('subject', 'Notifiacion DAGFLUX')
 
                 last_response = context.get('http_response', 'sin datos previos')
                 body = f"""
