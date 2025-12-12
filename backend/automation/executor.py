@@ -43,7 +43,7 @@ class GraphExecutor:
                 body = f"""
                 Hola, este es un aviso automatico de tu flujo '{self.workflow.name}'
                 El paso anterior http respondio esto... {last_response}
-                Saludos, el botazo que armaste sapeee! 
+                Saludos! 
                 """
                 if recipient:
                     print(f"Enviando correo a: {recipient}...")
@@ -64,7 +64,7 @@ class GraphExecutor:
     def run(self):
         print(f"\n--- Iniciando Ejecución: {self.workflow.name} ---")
         
-        # 1. Buscar el nodo inicial (WEBHOOK)
+        # 1.   nodo inicial (WEBHOOK)
         start_node = self.workflow.nodes.filter(type='WEBHOOK').first()
         
         if not start_node:
@@ -80,7 +80,7 @@ class GraphExecutor:
             # Ejecutar acción
             new_context = self.execute_node(current_node, context)
             
-            # Buscar siguientes pasos y agregarlos a la cola
+            #  siguientes pasos y agregarlos a la cola
             next_nodes = self.get_next_nodes(current_node)
             for next_node in next_nodes:
                 #   contexto actualizado al siguiente nodo
